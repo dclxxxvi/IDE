@@ -2,29 +2,30 @@ from PIL import Image
 import numpy as np
 
 
-def convert_image_to_mosaic(image, size, gradation_step):
-    for x in range(0, len(image), size):
-        for y in range(0, len(image[0]), size):
-            image[x:x + size, y:y + size] = get_average_brightness(
-                image[x:x + size, y:y + size], size, gradation_step)
-    return image
+def pixel_brightness(arr, p_s, gr, i, j):
+    '''
+    Возвращает оттенок серого одного пикселя
+
+    '''
+    brightness = np.sum(arr[i: i + p_s, j: j + p_s]) // (p_s ** 2 * 3)
+    brightness -= brightness % gr
+    return brightness
 
 
-def get_average_brightness(block, size, gradation_step):
-    average_color = (block[:size, :size].sum() / 3) // size ** 2
-    return int(average_color // gradation_step) * gradation_step
+def transform_to_mosaic(arr, p_s, gr):
+    for i in range(0, len(arr), p_s):
+        for j in range(0, len(arr[1]), p_s):
+            brightness = pixel_brightness(arr, p_s, gr, i, j)
+            arr[i: i + p_s, j: j + p_s] = np.full(3, brightness)
 
 
-def main():
-    image_file = Image.open(input("Введите имя файла, которое хотите конвертировать: "))
-    block_size = int(input("Введите размер блока: "))
-    gradations_count = int(input("Введите количество градаций серого: "))
-    image = np.array(image_file)
-    gradation_step = 255 // gradations_count
-
-    res = Image.fromarray(convert_image_to_mosaic(image, block_size, gradation_step))
-    res.save(input("Введите имя файла, в которой хотите сохранить результат: "))
-
-
-if __name__ == '__main__':
-    main()
+file_name = input("Введите имя файла который хотите преобразовать в мозаику: ").strip()
+res_name = input("Введите имя файла в который будет записан результат преобразования: ").strip()
+pixel_size = int(input("Введите размер одного элемента мозаики: "))
+gray_gradation = 255 // int(input("Введите число градаций серого:"))
+img = Image.open(file_name)
+img_arr = np.array(img)
+transform_to_mosaic(img_arr, pixel_size, gray_gradation)
+res = Image.fromarray(img_arr)
+print("Преобразование завершено... Результат записан в файл \"" + res_name + "\"")
+res.save('res.jpg')
